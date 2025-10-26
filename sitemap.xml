@@ -3,16 +3,22 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://hy4real.github.io/</loc>
-    <lastmod>2025-10-26T14:06:47+08:00</lastmod>
+    <lastmod>2025-06-22T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://hy4real.github.io/posts/</loc>
-    <lastmod>2025-10-26T14:06:47+08:00</lastmod>
+    <lastmod>2025-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://hy4real.github.io/tags/</loc>
+    <lastmod>2025-05-16T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://hy4real.github.io/posts/nanjingtour/</loc>
+    <lastmod>2025-05-16T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://hy4real.github.io/tags/%E6%B8%B8%E8%AE%B0/</loc>
+    <lastmod>2025-05-16T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://hy4real.github.io/posts/feb.17th/</loc>
-    <lastmod>2025-10-26T14:06:47+08:00</lastmod>
-  </url><url>
-    <loc>https://hy4real.github.io/posts/hello-hugo/</loc>
-    <lastmod>2025-10-26T11:35:04+08:00</lastmod>
+    <lastmod>2025-02-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://hy4real.github.io/archives/</loc>
   </url><url>
@@ -21,7 +27,5 @@
     <loc>https://hy4real.github.io/search/</loc>
   </url><url>
     <loc>https://hy4real.github.io/series/</loc>
-  </url><url>
-    <loc>https://hy4real.github.io/tags/</loc>
   </url>
 </urlset>
