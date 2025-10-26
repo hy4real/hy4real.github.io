@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>KEEP IT REAL</title>
+    <link>https://hy4real.github.io/</link>
+    <description>Recent content on KEEP IT REAL</description>
+    <generator>Hugo -- 0.152.2</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sun, 26 Oct 2025 11:35:04 +0800</lastBuildDate>
+    <atom:link href="https://hy4real.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hello Hugo</title>
+      <link>https://hy4real.github.io/posts/hello-hugo/</link>
+      <pubDate>Sun, 26 Oct 2025 11:35:04 +0800</pubDate>
+      <guid>https://hy4real.github.io/posts/hello-hugo/</guid>
+      <description>&lt;p&gt;This is my first post using Hugo.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
