@@ -163,6 +163,24 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">深度学习入门 Day 1
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p> 一、整体概述 这是一个完整的MNIST手写数字分类项目，使用PyTorch构建了一个小型卷积神经网络(CNN)。代码实现了数据加载、模型训练、测试评估、可视化错误样本和日志记录的全流程，非常适合作为深度学习入门范例。
+二、逐部分详细解析 1. 导入库 (Lines 1-7) import torch, torchvision, time, os from torch import nn from torch.utils.data import DataLoader from torchvision import datasets, transforms from torch.utils.tensorboard import SummaryWriter import random, numpy as np import matplotlib.pyplot as plt 功能：导入所有必需的工具库。
+设计意图：
+torch &amp; torchvision: PyTorch核心框架和计算机视觉工具 time, os: 基础系统功能（虽然代码中没直接用，但为扩展预留） SummaryWriter: 连接TensorBoard，实时可视化训练曲线 random, numpy: 用于设置随机种子，保证结果可复现 matplotlib: 绘制错误样本图，直观观察模型弱点 2. 随机种子设置 (Lines 9-16) seed = 42 random.seed(seed) np.random.seed(seed) torch.manual_seed(seed) # CPU 权重 torch.cuda.manual_seed(seed) # GPU 权重 torch.cuda.manual_seed_all(seed) # 多 GPU torch.backends.cudnn.deterministic = True # 卷积确定 torch.backends.cudnn.benchmark = False device = torch.device(&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;) print(&#34;Using&#34;, device) 功能：强制所有随机性来源产生确定性结果，并自动选择运算设备。
+意图详解：
+可复现性：深度学习实验依赖大量随机初始化，不设置种子的话，每次运行结果都不同，无法对比调参效果 多层保险：分别设置Python、numpy、PyTorch CPU/GPU的随机种子，确保无死角 cuDNN设置： deterministic = True: 牺牲一点速度，确保卷积等操作的算法是确定的 benchmark = False: 禁止自动选择最优算法，避免非确定性 设备选择：自动检测GPU，有则用GPU加速，无则 fallback 到CPU，提升代码兼容性 3. 超参数配置 (Lines 18-21) BATCH_SIZE = 128 EPOCHS = 5 LR = 0.01 功能：集中管理训练参数。
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-11-09 00:00:00 +0000 UTC'>2025年11月9日</span>&nbsp;·&nbsp;<span>why</span></footer>
+  <a class="entry-link" aria-label="post link to 深度学习入门 Day 1" href="https://hy4real.github.io/posts/deeplearningday1/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">没有察觉，竟已走远
     </h2>
   </header>
