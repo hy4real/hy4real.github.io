@@ -148,6 +148,22 @@
 
 <article class="post-entry tag-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">深度学习入门 Day 2
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>相较于 Day 1，mnist_cnn.py 做了两个版本的优化。
+第一版本 第一版本保持了原始代码的简洁性，仅将学习率调度从batch级别修正为epoch级别。
+优化后的精简代码 def train(epoch, model, criterion, optimizer, writer): # ... [原始代码：循环前向/反向/优化] ... # ❌ 移除了 scheduler.step() # 核心修改1 if batch_idx % 100 == 0: # ... [日志记录代码] ... # ... [train函数结束] ... # main 循环部分： for ep in range(1, EPOCHS&#43;1): # ... [train/test调用] ... # ✅ 在epoch结束后调度学习率 # 核心修改2 scheduler.step() # ... [记录学习率 &amp; 打印] ... 在这个参数和修改下，测试准确率达到了99.34%。
+位置 原始代码 优化后代码 意图 train()函数内 scheduler.step()在batch循环中 完全移除 避免学习率下降过快，每个batch都调整会导致训练不稳定 主循环内 无 新增scheduler.step()在epoch末尾 学习率按epoch周期平滑衰减，符合CosineAnnealingLR的设计思想 为何保持其他部分不变？ 无argparse：保持原始硬编码风格，代码更简洁，适合快速实验 无验证集：简化流程，直接5 epoch后看测试集结果（MNIST简单，过拟合风险低） 无数据增强：保持原始数据分布，最直接观察模型对干净数据的拟合能力 总结：此版本改动最小（仅2行代码移动），却修正了最关键的调度逻辑问题，是 性价比最高的优化 。
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-11-10 00:00:00 +0000 UTC'>2025年11月10日</span>&nbsp;·&nbsp;<span>why</span></footer>
+  <a class="entry-link" aria-label="post link to 深度学习入门 Day 2" href="https://hy4real.github.io/posts/deeplearningday2/"></a>
+</article>
+
+<article class="post-entry tag-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">深度学习入门 Day 1
     </h2>
   </header>
@@ -157,7 +173,7 @@
 设计意图：
 torch &amp; torchvision: PyTorch核心框架和计算机视觉工具 time, os: 基础系统功能（虽然代码中没直接用，但为扩展预留） SummaryWriter: 连接TensorBoard，实时可视化训练曲线 random, numpy: 用于设置随机种子，保证结果可复现 matplotlib: 绘制错误样本图，直观观察模型弱点 2. 随机种子设置 (Lines 9-16) seed = 42 random.seed(seed) np.random.seed(seed) torch.manual_seed(seed) # CPU 权重 torch.cuda.manual_seed(seed) # GPU 权重 torch.cuda.manual_seed_all(seed) # 多 GPU torch.backends.cudnn.deterministic = True # 卷积确定 torch.backends.cudnn.benchmark = False device = torch.device(&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;) print(&#34;Using&#34;, device) 功能：强制所有随机性来源产生确定性结果，并自动选择运算设备。
 意图详解：
-可复现性：深度学习实验依赖大量随机初始化，不设置种子的话，每次运行结果都不同，无法对比调参效果 多层保险：分别设置Python、numpy、PyTorch CPU/GPU的随机种子，确保无死角 cuDNN设置： deterministic = True: 牺牲一点速度，确保卷积等操作的算法是确定的 benchmark = False: 禁止自动选择最优算法，避免非确定性 设备选择：自动检测GPU，有则用GPU加速，无则 fallback 到CPU，提升代码兼容性 3. 超参数配置 (Lines 18-21) BATCH_SIZE = 128 EPOCHS = 5 LR = 0.01 功能：集中管理训练参数。
+可复现性：深度学习实验依赖大量随机初始化，不设置种子的话，每次运行结果都不同，无法对比调参效果 多层保险：分别设置Python、numpy、PyTorch CPU/GPU的随机种子，确保无死角 cuDNN设置： deterministic = True: 牺牲一点速度，确保卷积等操作的算法是确定的 benchmark = False: 禁止自动选择最优算法，避免非确定性 设备选择：自动检测GPU，有则用GPU加速，无则 fallback 到CPU，提升代码兼容性 3. 超参数配置 (Lines 18-21) BATCH_SIZE = 128 EPOCHS = 5 LR = 0.1 功能：集中管理训练参数。
 ...</p>
   </div>
   <footer class="entry-footer"><span title='2025-11-09 00:00:00 +0000 UTC'>2025年11月9日</span>&nbsp;·&nbsp;<span>why</span></footer>

@@ -6,8 +6,15 @@
     <description>Recent content in CNN on KEEP IT REAL</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 09 Nov 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 10 Nov 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://hy4real.github.io/tags/cnn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>深度学习入门 Day 2</title>
+      <link>https://hy4real.github.io/posts/deeplearningday2/</link>
+      <pubDate>Mon, 10 Nov 2025 00:00:00 +0000</pubDate>
+      <guid>https://hy4real.github.io/posts/deeplearningday2/</guid>
+      <description>从零开始学习深度学习</description>
+    </item>
     <item>
       <title>深度学习入门 Day 1</title>
       <link>https://hy4real.github.io/posts/deeplearningday1/</link>
