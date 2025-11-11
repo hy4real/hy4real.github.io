@@ -148,6 +148,28 @@
 
 <article class="post-entry tag-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">深度学习入门 Day 3
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>今日在进行 CIFAR-10 数据集的分类实验，使用 PyTorch 框架进行实验。 一共做了两个版本的模板，第一版的准确率是 67% 左右，第二版的准确率到了 83.43%。
+第一版 一、随机种子固定（可复现性） seed = 42 random.seed(seed) np.random.seed(seed) torch.manual_seed(seed) # ...（更多CUDA种子设置） torch.backends.cudnn.deterministic = True 作用：确保每次运行结果完全一致。
+原理：随机数生成器（数据打乱、权重初始化、Dropout等）都从固定起点开始。
+注意：benchmark=False会牺牲一点速度换取确定性。
+二、设备配置（GPU加速） device = torch.device(&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;) 作用：自动检测并使用GPU，否则用CPU。
+效果：GPU可将训练速度提升10-50倍。
+三、数据加载与预处理（核心部分） 1. 数据增强（仅训练集） transform_train = transforms.Compose([ transforms.RandomHorizontalFlip(), # 50%概率水平翻转（增强泛化） transforms.RandomCrop(32, padding=4), # 四周填充4像素后随机裁剪回32×32 transforms.ToTensor(), # 转为0-1的Tensor [C,H,W] transforms.Normalize((0.4914, 0.4822, 0.4465), # 每个通道的均值 (0.2471, 0.2435, 0.2616)) # 每个通道的标准差 ]) CIFAR-10均值/标准差：这些是数据集统计值，标准化后数据分布接近标准正态分布，加速收敛。
+2. 测试集转换（无增强） transform_test = transforms.Compose([ transforms.ToTensor(), transforms.Normalize(...) # 必须与训练集同分布 ]) 3. DataLoader train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=0) batch_size=128：每次喂给模型128张图片 shuffle=True：训练集每轮打乱顺序 num_workers=0：数据加载进程数（0表示主进程加载，简单项目够用） 四、模型架构详解（5层CNN） 特征提取器 self.features 这里的张量格式遵循 PyTorch 的约定：[B, C, H, W]，其中：
+B : Batch Size，批量处理的图片数量；
+C : Channels，通道数（如RGB图像为3）；
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-11-11 00:00:00 +0000 UTC'>2025年11月11日</span>&nbsp;·&nbsp;<span>why</span></footer>
+  <a class="entry-link" aria-label="post link to 深度学习入门 Day 3" href="https://hy4real.github.io/posts/deeplearningday3/"></a>
+</article>
+
+<article class="post-entry tag-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">深度学习入门 Day 2
     </h2>
   </header>

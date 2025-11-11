@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>深度学习入门 Day 3 | KEEP IT REAL</title>
+<meta name="keywords" content="DeepLearning, Python, CNN, 深度学习">
+<meta name="description" content="从零开始学习深度学习">
+<meta name="author" content="why">
+<link rel="canonical" href="https://hy4real.github.io/posts/deeplearningday3/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.a090830a421002426baafbd314e38f149d77b4c48a12ee9312700d770b27fb26.css" integrity="sha256-oJCDCkIQAkJrqvvTFOOPFJ13tMSKEu6TEnANdwsn&#43;yY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://hy4real.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://hy4real.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://hy4real.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://hy4real.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://hy4real.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="zh" href="https://hy4real.github.io/posts/deeplearningday3/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:url" content="https://hy4real.github.io/posts/deeplearningday3/">
+  <meta property="og:site_name" content="KEEP IT REAL">
+  <meta property="og:title" content="深度学习入门 Day 3">
+  <meta property="og:description" content="从零开始学习深度学习">
+  <meta property="og:locale" content="zh">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-11-11T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-11-11T00:00:00+00:00">
+    <meta property="article:tag" content="DeepLearning">
+    <meta property="article:tag" content="Python">
+    <meta property="article:tag" content="CNN">
+    <meta property="article:tag" content="深度学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深度学习入门 Day 3">
+<meta name="twitter:description" content="从零开始学习深度学习">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://hy4real.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "深度学习入门 Day 3",
+      "item": "https://hy4real.github.io/posts/deeplearningday3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "深度学习入门 Day 3",
+  "name": "深度学习入门 Day 3",
+  "description": "从零开始学习深度学习",
+  "keywords": [
+    "DeepLearning", "Python", "CNN", "深度学习"
+  ],
+  "articleBody": "今日在进行 CIFAR-10 数据集的分类实验，使用 PyTorch 框架进行实验。 一共做了两个版本的模板，第一版的准确率是 67% 左右，第二版的准确率到了 83.43%。\n第一版 一、随机种子固定（可复现性） seed = 42 random.seed(seed) np.random.seed(seed) torch.manual_seed(seed) # ...（更多CUDA种子设置） torch.backends.cudnn.deterministic = True 作用：确保每次运行结果完全一致。\n原理：随机数生成器（数据打乱、权重初始化、Dropout等）都从固定起点开始。\n注意：benchmark=False会牺牲一点速度换取确定性。\n二、设备配置（GPU加速） device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\") 作用：自动检测并使用GPU，否则用CPU。\n效果：GPU可将训练速度提升10-50倍。\n三、数据加载与预处理（核心部分） 1. 数据增强（仅训练集） transform_train = transforms.Compose([ transforms.RandomHorizontalFlip(), # 50%概率水平翻转（增强泛化） transforms.RandomCrop(32, padding=4), # 四周填充4像素后随机裁剪回32×32 transforms.ToTensor(), # 转为0-1的Tensor [C,H,W] transforms.Normalize((0.4914, 0.4822, 0.4465), # 每个通道的均值 (0.2471, 0.2435, 0.2616)) # 每个通道的标准差 ]) CIFAR-10均值/标准差：这些是数据集统计值，标准化后数据分布接近标准正态分布，加速收敛。\n2. 测试集转换（无增强） transform_test = transforms.Compose([ transforms.ToTensor(), transforms.Normalize(...) # 必须与训练集同分布 ]) 3. DataLoader train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=0) batch_size=128：每次喂给模型128张图片 shuffle=True：训练集每轮打乱顺序 num_workers=0：数据加载进程数（0表示主进程加载，简单项目够用） 四、模型架构详解（5层CNN） 特征提取器 self.features 这里的张量格式遵循 PyTorch 的约定：[B, C, H, W]，其中：\nB : Batch Size，批量处理的图片数量；\nC : Channels，通道数（如RGB图像为3）；\nH : Height，图像高度；\nW : Width，图像宽度。\nnn.Conv2d(3, 32, 3, padding=1), # [B,3,32,32] → [B,32,32,32] nn.ReLU(), nn.MaxPool2d(2), # [B,32,32,32] → [B,32,16,16] nn.Conv2d(32, 64, 3, padding=1), # [B,32,16,16] → [B,64,16,16] nn.ReLU(), nn.Conv2d(64, 128, 3, padding=1), # [B,64,16,16] → [B,128,16,16] nn.ReLU(), nn.MaxPool2d(2), # [B,128,16,16] → [B,128,8,8] 卷积层设计：\n3×3小卷积核，padding=1保持尺寸不变 通道数递增：32→64→128（特征金字塔） 2次池化：空间尺寸32→16→8 分类器 self.classifier nn.Flatten(), # [B,128,8,8] → [B,8192] nn.Linear(128 * 8 * 8, 256), # [B,8192] → [B,256] (FC层) nn.ReLU(), nn.Dropout(0.5), # 训练时随机失活50%神经元 nn.Linear(256, 10) # [B,256] → [B,10] (输出层) 五、训练配置策略 1. 损失函数 criterion = nn.CrossEntropyLoss() 作用：结合了LogSoftmax + NLLLoss，自动处理原始输出（logits）。\n输入：模型未归一化的输出 [B,10] 和类别标签 [B]。\n2. 优化器 optimizer = optim.Adam(model.parameters(), lr=3e-4) Adam：自适应学习率，几乎无需调参，适合初学者 lr=3e-4：经验性最优学习率（对很多模型都有效） 3. 学习率调度器 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5) 策略：每2个epoch，学习率减半。\n效果：后期精细化调整参数。\n注意：对CIFAR-10可能过于激进，10个epoch会衰减3次（最终lr=3e-4×0.5³=3.75e-5）。\n六、训练循环 train() model.train() # 关键：启用Dropout/BN训练模式 for batch_idx, (inputs, labels) in enumerate(train_loader): inputs, labels = inputs.to(device), labels.to(device) # 数据移至GPU optimizer.zero_grad() # 清空梯度（避免累积） outputs = model(inputs) # 前向传播 loss = criterion(outputs, labels) # 计算损失 loss.backward() # 反向传播计算梯度 optimizer.step() # 更新权重 if batch_idx % 100 == 0: # 每100个batch打印一次 print(f\"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}\") 七、测试/验证 test() model.eval() # 关键：关闭Dropout/BN评估模式 with torch.no_grad(): # 禁用梯度计算（节省内存，加速） for inputs, labels in test_loader: inputs, labels = inputs.to(device), labels.to(device) outputs = model(inputs) _, predicted = torch.max(outputs.data, 1) # 取最大概率的类别 total += labels.size(0) correct += (predicted == labels).sum().item() 注意：代码直接用测试集作为验证集，学术上不够严谨，建议拆分出验证集。\n八、主执行流程 for epoch in range(1, 11): train(epoch) test(epoch) scheduler.step() # 每个epoch后调整学习率 训练节奏：\n共10个epoch 每个epoch：训练（打印loss）→ 测试（打印acc）→ 调整lr 九、模型特点与潜在问题 优点 ✅ 结构清晰，适合CIFAR-10入门\n✅ 数据增强合理\n✅ 使用现代优化器（Adam）\n潜在问题 ⚠️ 模型容量较小：3层卷积对CIFAR-10可能欠拟合，SOTA模型通常需要6+层\n⚠️ 无验证集：直接用测试集调参有数据泄露风险\n⚠️ num_workers=0：数据加载可能成为瓶颈（建议≥2）\n⚠️ 学习率衰减快：10个epoch可能不足以充分发挥模型潜力\n⚠️ 缺少早停：无法自动保存最优模型\n十、改进建议 增加验证集： train_set, val_set = torch.utils.data.random_split(train_set, [45000, 5000]) 保存最佳模型： best_acc = 0 if acc \u003e best_acc: torch.save(model.state_dict(), 'best_model.pth') best_acc = acc 增强模型： 增加卷积层深度（如VGG-style：64-128-256-512） 添加BatchNorm层：nn.Conv2d(...), nn.BatchNorm2d(32), nn.ReLU() 一句话总结：这是一个标准的CIFAR-10入门级CNN，适合教学和快速实验，但距离SOTA还有较大优化空间。\n下附完整代码：\nimport torch import torchvision from torch import nn, optim from torch.utils.data import DataLoader from torchvision import datasets, transforms import numpy as np import random # 固定随机种子 seed = 42 random.seed(seed) np.random.seed(seed) torch.manual_seed(seed) torch.cuda.manual_seed(seed) torch.cuda.manual_seed_all(seed) torch.backends.cudnn.deterministic = True torch.backends.cudnn.benchmark = False # 使用 GPU device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\") # 数据加载 transform_train = transforms.Compose([ transforms.RandomHorizontalFlip(), transforms.RandomCrop(32, padding=4), transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)) ]) transform_test = transforms.Compose([ transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)) ]) train_set = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train) test_set = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test) train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=0) test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=0) # 模型定义 class CNN(nn.Module): def __init__(self): super().__init__() self.features = nn.Sequential( nn.Conv2d(3, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(), nn.Conv2d(64, 128, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), ) self.classifier = nn.Sequential( nn.Flatten(), nn.Linear(128 * 8 * 8, 256), nn.ReLU(), nn.Dropout(0.5), nn.Linear(256, 10) ) def forward(self, x): x = self.features(x) x = self.classifier(x) return x model = CNN().to(device) # 优化器和损失函数 criterion = nn.CrossEntropyLoss() optimizer = optim.Adam(model.parameters(), lr=3e-4) scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5) # 训练和验证 def train(epoch): model.train() for batch_idx, (inputs, labels) in enumerate(train_loader): inputs, labels = inputs.to(device), labels.to(device) optimizer.zero_grad() outputs = model(inputs) loss = criterion(outputs, labels) loss.backward() optimizer.step() if batch_idx % 100 == 0: print(f\"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}\") def test(epoch): model.eval() correct, total = 0, 0 with torch.no_grad(): for inputs, labels in test_loader: inputs, labels = inputs.to(device), labels.to(device) outputs = model(inputs) _, predicted = torch.max(outputs.data, 1) total += labels.size(0) correct += (predicted == labels).sum().item() print(f\"Epoch {epoch}, Accuracy: {100 * correct / total:.2f}%\") for epoch in range(1, 11): train(epoch) test(epoch) scheduler.step() 第二版 这是CIFAR-10分类任务的升级版（v2）代码。我将逐部分解析，并与前一个版本（v1） 做详细对比：\n一、整体结构对比 特性 v1（基础版） v2（升级版） 改进目的 模型容量 3层卷积，通道数32-64-128 4层卷积，通道数64-128-256-256 增加非线性表达能力 全连接层 2层（256→10） 3层（512→256→10） 缓解特征压缩 Dropout 0.5（仅最后） 0.3（两层FC后） 更细粒度正则化 学习率调度 StepLR（阶梯衰减） CosineAnnealingLR（余弦退火） 平滑学习率调整 初始学习率 3e-4 1e-3 配合余弦退火更大探索空间 二、模型架构（ 最大变化 ） v2模型结构解析 self.features = nn.Sequential( nn.Conv2d(3, 64, 3, padding=1), nn.ReLU(), nn.Conv2d(64, 128, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), # 第一次池化：32×32 → 16×16 nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(), nn.Conv2d(256, 256, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), # 第二次池化：16×16 → 8×8 ) 关键对比与改进 层级 v1顺序 v2顺序 设计差异分析 Layer1 Conv3→32 + ReLU + Pool Conv3→64 + ReLU（无池化） v2延迟池化，保留早期特征分辨率 Layer2 Conv32→64 + ReLU Conv64→128 + ReLU + Pool v2将池化后移，减少信息损失 Layer3 Conv64→128 + ReLU + Pool Conv128→256 + ReLU v2增加深度，提取更抽象特征 Layer4 ❌ 无 Conv256→256 + ReLU + Pool v2新增层，扩大感受野和容量 v2的优势如下：\n延迟池化：早期层保留更多空间细节，利于小目标（CIFAR-10图像仅32×32） 增加深度：4层卷积能学习更复杂的特征层次（边缘→纹理→部件→物体） 通道翻倍：后期256通道提供足够容量编码高级语义 三、分类器部分（ 正则化加强 ） self.classifier = nn.Sequential( nn.Flatten(), nn.Linear(256 * 8 * 8, 512), # 输入节点从128*8*8=8192增加到256*8*8=16384 nn.ReLU(), nn.Dropout(0.3), # 第一个Dropout nn.Linear(512, 256), # 新增中间层 nn.ReLU(), nn.Dropout(0.3), # 第二个Dropout nn.Linear(256, 10) ) 对比总结：\n特性 v1 v2 改进意义 FC层数 2层 3层 缓解维度坍缩过快 Dropout次数 1次（仅最后） 2次 双重正则，防止中间层过拟合 Dropout率 0.5（高） 0.3（中） 适度正则，保留更多信息流 参数量 ~280万 ~460万 容量提升65% 设计思想：v2的FC层形成\"瓶颈结构\"（16384→512→256→10），逐层压缩，比v1的直接压缩（8192→256→10）更平滑。\n四、优化策略（ 调度器进化 ） v2的核心改进 optimizer = optim.Adam(model.parameters(), lr=0.001) # 学习率提升3.3倍 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10) 调度器对比 # v1: StepLR # Epoch 1-2: lr = 3e-4 # Epoch 3-4: lr = 1.5e-4 # Epoch 5-6: lr = 7.5e-5 # Epoch 7-10: lr = 3.75e-5（过早衰减） # v2: CosineAnnealingLR # lr在10个epoch内从1e-3平滑下降到接近0 # 形成余弦曲线，前期探索，后期精细调整 余弦退火的优势：\n平滑性：避免学习率突变导致loss震荡 探索性：前期较大lr跳出局部最优 精细度：后期小lr稳定收敛 自动化：无需人工设定衰减节点 五、关键问题与建议 仍存在的共通问题 无验证集：训练集=45000，验证集=5000，测试集=10000（推荐拆分） num_workers=0：建议设为num_workers=2或4（看CPU核心数） 无早停：10个epoch可能不够，建议增加到20-30 epoch v2专属建议 学习率适配：CosineAnnealing下，建议epoch至少等于T_max=10，否则学习率未充分衰减 模型保存：大模型更容易过拟合，务必保存最佳model.state_dict() 梯度裁剪：深层网络可加torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5)防止梯度爆炸 六、一句话总结 v1是\"能用\"的入门模型，v2是\"好用\"的优化模型——通过加深网络、延迟池化、双重Dropout、余弦退火四大改进，在保持代码简洁的同时显著提升了模型容量和训练稳定性，适合作为CIFAR-10的Baseline。\n下附第二版完整代码：\nimport torch import torchvision from torch import nn, optim from torch.utils.data import DataLoader from torchvision import datasets, transforms import numpy as np import random # 固定随机种子 seed = 42 random.seed(seed) np.random.seed(seed) torch.manual_seed(seed) torch.cuda.manual_seed(seed) torch.cuda.manual_seed_all(seed) torch.backends.cudnn.deterministic = True torch.backends.cudnn.benchmark = False # 使用 GPU device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\") # 数据加载与增强 transform_train = transforms.Compose([ transforms.RandomHorizontalFlip(), transforms.RandomCrop(32, padding=4), transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)) ]) transform_test = transforms.Compose([ transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)) ]) train_set = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train) test_set = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test) train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=0) test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=0) # 模型设计：扩展通道数，增加非线性特征提取层 class CNN(nn.Module): def __init__(self): super().__init__() self.features = nn.Sequential( nn.Conv2d(3, 64, 3, padding=1), nn.ReLU(), nn.Conv2d(64, 128, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(), nn.Conv2d(256, 256, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), ) self.classifier = nn.Sequential( nn.Flatten(), nn.Linear(256 * 8 * 8, 512), nn.ReLU(), nn.Dropout(0.3), nn.Linear(512, 256), nn.ReLU(), nn.Dropout(0.3), nn.Linear(256, 10) ) def forward(self, x): x = self.features(x) x = self.classifier(x) return x model = CNN().to(device) # 优化器和损失函数 criterion = nn.CrossEntropyLoss() optimizer = optim.Adam(model.parameters(), lr=0.001) scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10) # 训练与验证 def train(epoch): model.train() for batch_idx, (inputs, labels) in enumerate(train_loader): inputs, labels = inputs.to(device), labels.to(device) optimizer.zero_grad() outputs = model(inputs) loss = criterion(outputs, labels) loss.backward() optimizer.step() if batch_idx % 100 == 0: print(f\"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}\") def test(epoch): model.eval() correct, total = 0, 0 with torch.no_grad(): for inputs, labels in test_loader: inputs, labels = inputs.to(device), labels.to(device) outputs = model(inputs) _, predicted = torch.max(outputs.data, 1) total += labels.size(0) correct += (predicted == labels).sum().item() print(f\"Epoch {epoch}, Accuracy: {100 * correct / total:.2f}%\") for epoch in range(1, 11): train(epoch) test(epoch) scheduler.step() ",
+  "wordCount" : "1127",
+  "inLanguage": "zh",
+  "datePublished": "2025-11-11T00:00:00Z",
+  "dateModified": "2025-11-11T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "why"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hy4real.github.io/posts/deeplearningday3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "KEEP IT REAL",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hy4real.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://hy4real.github.io/" accesskey="h" title="KEEP IT REAL (Alt + H)">KEEP IT REAL</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://hy4real.github.io/" title="首页">
+                    <span>首页</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://hy4real.github.io/archives" title="归档">
+                    <span>归档</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://hy4real.github.io/search" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://hy4real.github.io/tags" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://hy4real.github.io/">主页</a>&nbsp;»&nbsp;<a href="https://hy4real.github.io/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      深度学习入门 Day 3
+    </h1>
+    <div class="post-description">
+      从零开始学习深度学习
+    </div>
+    <div class="post-meta"><span title='2025-11-11 00:00:00 +0000 UTC'>2025年11月11日</span>&nbsp;·&nbsp;<span>why</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">目录</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e7%ac%ac%e4%b8%80%e7%89%88" aria-label="第一版">第一版</a><ul>
+                        
+                <li>
+                    <a href="#%e4%b8%80%e9%9a%8f%e6%9c%ba%e7%a7%8d%e5%ad%90%e5%9b%ba%e5%ae%9a%e5%8f%af%e5%a4%8d%e7%8e%b0%e6%80%a7" aria-label="一、随机种子固定（可复现性）">一、随机种子固定（可复现性）</a></li>
+                <li>
+                    <a href="#%e4%ba%8c%e8%ae%be%e5%a4%87%e9%85%8d%e7%bd%aegpu%e5%8a%a0%e9%80%9f" aria-label="二、设备配置（GPU加速）">二、设备配置（GPU加速）</a></li>
+                <li>
+                    <a href="#%e4%b8%89%e6%95%b0%e6%8d%ae%e5%8a%a0%e8%bd%bd%e4%b8%8e%e9%a2%84%e5%a4%84%e7%90%86%e6%a0%b8%e5%bf%83%e9%83%a8%e5%88%86" aria-label="三、数据加载与预处理（核心部分）">三、数据加载与预处理（核心部分）</a><ul>
+                        
+                <li>
+                    <a href="#1-%e6%95%b0%e6%8d%ae%e5%a2%9e%e5%bc%ba%e4%bb%85%e8%ae%ad%e7%bb%83%e9%9b%86" aria-label="1. 数据增强（仅训练集）">1. 数据增强（仅训练集）</a></li>
+                <li>
+                    <a href="#2-%e6%b5%8b%e8%af%95%e9%9b%86%e8%bd%ac%e6%8d%a2%e6%97%a0%e5%a2%9e%e5%bc%ba" aria-label="2. 测试集转换（无增强）">2. 测试集转换（无增强）</a></li>
+                <li>
+                    <a href="#3-dataloader" aria-label="3. DataLoader">3. DataLoader</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e5%9b%9b%e6%a8%a1%e5%9e%8b%e6%9e%b6%e6%9e%84%e8%af%a6%e8%a7%a35%e5%b1%82cnn" aria-label="四、模型架构详解（5层CNN）">四、模型架构详解（5层CNN）</a><ul>
+                        
+                <li>
+                    <a href="#%e7%89%b9%e5%be%81%e6%8f%90%e5%8f%96%e5%99%a8" aria-label="特征提取器 self.features">特征提取器 self.features</a></li>
+                <li>
+                    <a href="#%e5%88%86%e7%b1%bb%e5%99%a8" aria-label="分类器 self.classifier">分类器 self.classifier</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e4%ba%94%e8%ae%ad%e7%bb%83%e9%85%8d%e7%bd%ae%e7%ad%96%e7%95%a5" aria-label="五、训练配置策略">五、训练配置策略</a><ul>
+                        
+                <li>
+                    <a href="#1-%e6%8d%9f%e5%a4%b1%e5%87%bd%e6%95%b0" aria-label="1. 损失函数">1. 损失函数</a></li>
+                <li>
+                    <a href="#2-%e4%bc%98%e5%8c%96%e5%99%a8" aria-label="2. 优化器">2. 优化器</a></li>
+                <li>
+                    <a href="#3-%e5%ad%a6%e4%b9%a0%e7%8e%87%e8%b0%83%e5%ba%a6%e5%99%a8" aria-label="3. 学习率调度器">3. 学习率调度器</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e5%85%ad%e8%ae%ad%e7%bb%83%e5%be%aa%e7%8e%af" aria-label="六、训练循环 train()">六、训练循环 train()</a></li>
+                <li>
+                    <a href="#%e4%b8%83%e6%b5%8b%e8%af%95%e9%aa%8c%e8%af%81" aria-label="七、测试/验证 test()">七、测试/验证 test()</a></li>
+                <li>
+                    <a href="#%e5%85%ab%e4%b8%bb%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b" aria-label="八、主执行流程">八、主执行流程</a></li>
+                <li>
+                    <a href="#%e4%b9%9d%e6%a8%a1%e5%9e%8b%e7%89%b9%e7%82%b9%e4%b8%8e%e6%bd%9c%e5%9c%a8%e9%97%ae%e9%a2%98" aria-label="九、模型特点与潜在问题">九、模型特点与潜在问题</a><ul>
+                        
+                <li>
+                    <a href="#%e4%bc%98%e7%82%b9" aria-label="优点">优点</a></li>
+                <li>
+                    <a href="#%e6%bd%9c%e5%9c%a8%e9%97%ae%e9%a2%98" aria-label="潜在问题">潜在问题</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e5%8d%81%e6%94%b9%e8%bf%9b%e5%bb%ba%e8%ae%ae" aria-label="十、改进建议">十、改进建议</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e7%ac%ac%e4%ba%8c%e7%89%88" aria-label="第二版">第二版</a><ul>
+                        
+                <li>
+                    <a href="#%e4%b8%80%e6%95%b4%e4%bd%93%e7%bb%93%e6%9e%84%e5%af%b9%e6%af%94" aria-label="一、整体结构对比">一、整体结构对比</a></li>
+                <li>
+                    <a href="#%e4%ba%8c%e6%a8%a1%e5%9e%8b%e6%9e%b6%e6%9e%84-%e6%9c%80%e5%a4%a7%e5%8f%98%e5%8c%96-" aria-label="二、模型架构（ 最大变化 ）">二、模型架构（ 最大变化 ）</a><ul>
+                        
+                <li>
+                    <a href="#v2%e6%a8%a1%e5%9e%8b%e7%bb%93%e6%9e%84%e8%a7%a3%e6%9e%90" aria-label="v2模型结构解析">v2模型结构解析</a></li>
+                <li>
+                    <a href="#%e5%85%b3%e9%94%ae%e5%af%b9%e6%af%94%e4%b8%8e%e6%94%b9%e8%bf%9b" aria-label="关键对比与改进">关键对比与改进</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e4%b8%89%e5%88%86%e7%b1%bb%e5%99%a8%e9%83%a8%e5%88%86-%e6%ad%a3%e5%88%99%e5%8c%96%e5%8a%a0%e5%bc%ba-" aria-label="三、分类器部分（ 正则化加强 ）">三、分类器部分（ 正则化加强 ）</a></li>
+                <li>
+                    <a href="#%e5%9b%9b%e4%bc%98%e5%8c%96%e7%ad%96%e7%95%a5-%e8%b0%83%e5%ba%a6%e5%99%a8%e8%bf%9b%e5%8c%96-" aria-label="四、优化策略（ 调度器进化 ）">四、优化策略（ 调度器进化 ）</a><ul>
+                        
+                <li>
+                    <a href="#v2%e7%9a%84%e6%a0%b8%e5%bf%83%e6%94%b9%e8%bf%9b" aria-label="v2的核心改进">v2的核心改进</a></li>
+                <li>
+                    <a href="#%e8%b0%83%e5%ba%a6%e5%99%a8%e5%af%b9%e6%af%94" aria-label="调度器对比">调度器对比</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e4%ba%94%e5%85%b3%e9%94%ae%e9%97%ae%e9%a2%98%e4%b8%8e%e5%bb%ba%e8%ae%ae" aria-label="五、关键问题与建议">五、关键问题与建议</a><ul>
+                        
+                <li>
+                    <a href="#%e4%bb%8d%e5%ad%98%e5%9c%a8%e7%9a%84%e5%85%b1%e9%80%9a%e9%97%ae%e9%a2%98" aria-label="仍存在的共通问题">仍存在的共通问题</a></li>
+                <li>
+                    <a href="#v2%e4%b8%93%e5%b1%9e%e5%bb%ba%e8%ae%ae" aria-label="v2专属建议">v2专属建议</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e5%85%ad%e4%b8%80%e5%8f%a5%e8%af%9d%e6%80%bb%e7%bb%93" aria-label="六、一句话总结">六、一句话总结</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>今日在进行 CIFAR-10 数据集的分类实验，使用 PyTorch 框架进行实验。
+一共做了两个版本的模板，第一版的准确率是 67% 左右，第二版的准确率到了 83.43%。</p>
+<h2 id="第一版">第一版<a hidden class="anchor" aria-hidden="true" href="#第一版">#</a></h2>
+<h3 id="一随机种子固定可复现性"><strong>一、随机种子固定（可复现性）</strong><a hidden class="anchor" aria-hidden="true" href="#一随机种子固定可复现性">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
+</span></span><span class="line"><span class="cl"><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ...（更多CUDA种子设置）</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
+</span></span></code></pre></div><p><strong>作用</strong>：确保每次运行结果完全一致。<br>
+<strong>原理</strong>：随机数生成器（数据打乱、权重初始化、Dropout等）都从固定起点开始。<br>
+<strong>注意</strong>：<code>benchmark=False</code>会牺牲一点速度换取确定性。</p>
+<hr>
+<h3 id="二设备配置gpu加速"><strong>二、设备配置（GPU加速）</strong><a hidden class="anchor" aria-hidden="true" href="#二设备配置gpu加速">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&#34;cuda&#34;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&#34;cpu&#34;</span><span class="p">)</span>
+</span></span></code></pre></div><p><strong>作用</strong>：自动检测并使用GPU，否则用CPU。<br>
+<strong>效果</strong>：GPU可将训练速度提升10-50倍。</p>
+<hr>
+<h3 id="三数据加载与预处理核心部分"><strong>三、数据加载与预处理（核心部分）</strong><a hidden class="anchor" aria-hidden="true" href="#三数据加载与预处理核心部分">#</a></h3>
+<h4 id="1-数据增强仅训练集"><strong>1. 数据增强（仅训练集）</strong><a hidden class="anchor" aria-hidden="true" href="#1-数据增强仅训练集">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">transform_train</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(),</span>  <span class="c1"># 50%概率水平翻转（增强泛化）</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">RandomCrop</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>  <span class="c1"># 四周填充4像素后随机裁剪回32×32</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>  <span class="c1"># 转为0-1的Tensor [C,H,W]</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mf">0.4914</span><span class="p">,</span> <span class="mf">0.4822</span><span class="p">,</span> <span class="mf">0.4465</span><span class="p">),</span>  <span class="c1"># 每个通道的均值</span>
+</span></span><span class="line"><span class="cl">                         <span class="p">(</span><span class="mf">0.2471</span><span class="p">,</span> <span class="mf">0.2435</span><span class="p">,</span> <span class="mf">0.2616</span><span class="p">))</span> <span class="c1"># 每个通道的标准差</span>
+</span></span><span class="line"><span class="cl"><span class="p">])</span>
+</span></span></code></pre></div><p><strong>CIFAR-10均值/标准差</strong>：这些是数据集统计值，标准化后数据分布接近标准正态分布，加速收敛。</p>
+<h4 id="2-测试集转换无增强"><strong>2. 测试集转换（无增强）</strong><a hidden class="anchor" aria-hidden="true" href="#2-测试集转换无增强">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">transform_test</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># 必须与训练集同分布</span>
+</span></span><span class="line"><span class="cl"><span class="p">])</span>
+</span></span></code></pre></div><h4 id="3-dataloader"><strong>3. DataLoader</strong><a hidden class="anchor" aria-hidden="true" href="#3-dataloader">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span></span></code></pre></div><ul>
+<li><code>batch_size=128</code>：每次喂给模型128张图片</li>
+<li><code>shuffle=True</code>：训练集每轮打乱顺序</li>
+<li><code>num_workers=0</code>：数据加载进程数（0表示主进程加载，简单项目够用）</li>
+</ul>
+<hr>
+<h3 id="四模型架构详解5层cnn"><strong>四、模型架构详解（5层CNN）</strong><a hidden class="anchor" aria-hidden="true" href="#四模型架构详解5层cnn">#</a></h3>
+<h4 id="特征提取器"><strong>特征提取器 <code>self.features</code></strong><a hidden class="anchor" aria-hidden="true" href="#特征提取器">#</a></h4>
+<p>这里的张量格式遵循 PyTorch 的约定：[B, C, H, W]，其中：</p>
+<p>B  : Batch Size，批量处理的图片数量；</p>
+<p>C  : Channels，通道数（如RGB图像为3）；</p>
+<p>H  : Height，图像高度；</p>
+<p>W  : Width，图像宽度。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>    <span class="c1"># [B,3,32,32] → [B,32,32,32]</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>                   <span class="c1"># [B,32,32,32] → [B,32,16,16]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>   <span class="c1"># [B,32,16,16] → [B,64,16,16]</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>  <span class="c1"># [B,64,16,16] → [B,128,16,16]</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>                   <span class="c1"># [B,128,16,16] → [B,128,8,8]</span>
+</span></span></code></pre></div><p><strong>卷积层设计</strong>：</p>
+<ul>
+<li>3×3小卷积核，padding=1保持尺寸不变</li>
+<li>通道数递增：32→64→128（特征金字塔）</li>
+<li>2次池化：空间尺寸32→16→8</li>
+</ul>
+<h4 id="分类器"><strong>分类器 <code>self.classifier</code></strong><a hidden class="anchor" aria-hidden="true" href="#分类器">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>                      <span class="c1"># [B,128,8,8] → [B,8192]</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>       <span class="c1"># [B,8192] → [B,256]  (FC层)</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>                   <span class="c1"># 训练时随机失活50%神经元</span>
+</span></span><span class="line"><span class="cl"><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>                 <span class="c1"># [B,256] → [B,10]   (输出层)</span>
+</span></span></code></pre></div><hr>
+<h3 id="五训练配置策略"><strong>五、训练配置策略</strong><a hidden class="anchor" aria-hidden="true" href="#五训练配置策略">#</a></h3>
+<h4 id="1-损失函数"><strong>1. 损失函数</strong><a hidden class="anchor" aria-hidden="true" href="#1-损失函数">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+</span></span></code></pre></div><p><strong>作用</strong>：结合了<code>LogSoftmax + NLLLoss</code>，自动处理原始输出（logits）。<br>
+<strong>输入</strong>：模型未归一化的输出 <code>[B,10]</code> 和类别标签 <code>[B]</code>。</p>
+<h4 id="2-优化器"><strong>2. 优化器</strong><a hidden class="anchor" aria-hidden="true" href="#2-优化器">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">3e-4</span><span class="p">)</span>
+</span></span></code></pre></div><ul>
+<li><strong>Adam</strong>：自适应学习率，几乎无需调参，适合初学者</li>
+<li><code>lr=3e-4</code>：经验性最优学习率（对很多模型都有效）</li>
+</ul>
+<h4 id="3-学习率调度器"><strong>3. 学习率调度器</strong><a hidden class="anchor" aria-hidden="true" href="#3-学习率调度器">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">StepLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+</span></span></code></pre></div><p><strong>策略</strong>：每2个epoch，学习率减半。<br>
+<strong>效果</strong>：后期精细化调整参数。<br>
+<strong>注意</strong>：对CIFAR-10可能过于激进，10个epoch会衰减3次（最终lr=3e-4×0.5³=3.75e-5）。</p>
+<hr>
+<h3 id="六训练循环"><strong>六、训练循环 <code>train()</code></strong><a hidden class="anchor" aria-hidden="true" href="#六训练循环">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>  <span class="c1"># 关键：启用Dropout/BN训练模式</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_loader</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># 数据移至GPU</span>
+</span></span><span class="line"><span class="cl">    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>      <span class="c1"># 清空梯度（避免累积）</span>
+</span></span><span class="line"><span class="cl">    <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>    <span class="c1"># 前向传播</span>
+</span></span><span class="line"><span class="cl">    <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>  <span class="c1"># 计算损失</span>
+</span></span><span class="line"><span class="cl">    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>            <span class="c1"># 反向传播计算梯度</span>
+</span></span><span class="line"><span class="cl">    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>           <span class="c1"># 更新权重</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>   <span class="c1"># 每100个batch打印一次</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Batch </span><span class="si">{</span><span class="n">batch_idx</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span></code></pre></div><hr>
+<h3 id="七测试验证"><strong>七、测试/验证 <code>test()</code></strong><a hidden class="anchor" aria-hidden="true" href="#七测试验证">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>  <span class="c1"># 关键：关闭Dropout/BN评估模式</span>
+</span></span><span class="line"><span class="cl"><span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>  <span class="c1"># 禁用梯度计算（节省内存，加速）</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">test_loader</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># 取最大概率的类别</span>
+</span></span><span class="line"><span class="cl">        <span class="n">total</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</span></span></code></pre></div><p><strong>注意</strong>：代码直接用<strong>测试集</strong>作为验证集，学术上不够严谨，建议拆分出验证集。</p>
+<hr>
+<h3 id="八主执行流程"><strong>八、主执行流程</strong><a hidden class="anchor" aria-hidden="true" href="#八主执行流程">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">train</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">test</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>  <span class="c1"># 每个epoch后调整学习率</span>
+</span></span></code></pre></div><p><strong>训练节奏</strong>：</p>
+<ul>
+<li>共10个epoch</li>
+<li>每个epoch：训练（打印loss）→ 测试（打印acc）→ 调整lr</li>
+</ul>
+<hr>
+<h3 id="九模型特点与潜在问题"><strong>九、模型特点与潜在问题</strong><a hidden class="anchor" aria-hidden="true" href="#九模型特点与潜在问题">#</a></h3>
+<h4 id="优点"><strong>优点</strong><a hidden class="anchor" aria-hidden="true" href="#优点">#</a></h4>
+<p>✅ 结构清晰，适合CIFAR-10入门<br>
+✅ 数据增强合理<br>
+✅ 使用现代优化器（Adam）</p>
+<h4 id="潜在问题"><strong>潜在问题</strong><a hidden class="anchor" aria-hidden="true" href="#潜在问题">#</a></h4>
+<p>⚠️ <strong>模型容量较小</strong>：3层卷积对CIFAR-10可能欠拟合，SOTA模型通常需要6+层<br>
+⚠️ <strong>无验证集</strong>：直接用测试集调参有数据泄露风险<br>
+⚠️ <strong>num_workers=0</strong>：数据加载可能成为瓶颈（建议≥2）<br>
+⚠️ <strong>学习率衰减快</strong>：10个epoch可能不足以充分发挥模型潜力<br>
+⚠️ <strong>缺少早停</strong>：无法自动保存最优模型</p>
+<hr>
+<h3 id="十改进建议"><strong>十、改进建议</strong><a hidden class="anchor" aria-hidden="true" href="#十改进建议">#</a></h3>
+<ol>
+<li><strong>增加验证集</strong>：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">random_split</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="p">[</span><span class="mi">45000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">])</span>
+</span></span></code></pre></div><ol start="2">
+<li><strong>保存最佳模型</strong>：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">best_acc</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="n">acc</span> <span class="o">&gt;</span> <span class="n">best_acc</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="s1">&#39;best_model.pth&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">best_acc</span> <span class="o">=</span> <span class="n">acc</span>
+</span></span></code></pre></div><ol start="3">
+<li><strong>增强模型</strong>：
+<ul>
+<li>增加卷积层深度（如VGG-style：64-128-256-512）</li>
+<li>添加BatchNorm层：<code>nn.Conv2d(...)</code>, <code>nn.BatchNorm2d(32)</code>, <code>nn.ReLU()</code></li>
+</ul>
+</li>
+</ol>
+<hr>
+<p><strong>一句话总结</strong>：这是一个<strong>标准的CIFAR-10入门级CNN</strong>，适合教学和快速实验，但距离SOTA还有较大优化空间。</p>
+<p>下附完整代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torchvision</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">optim</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">transforms</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">random</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 固定随机种子</span>
+</span></span><span class="line"><span class="cl"><span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
+</span></span><span class="line"><span class="cl"><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">benchmark</span> <span class="o">=</span> <span class="kc">False</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 GPU</span>
+</span></span><span class="line"><span class="cl"><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&#34;cuda&#34;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&#34;cpu&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 数据加载</span>
+</span></span><span class="line"><span class="cl"><span class="n">transform_train</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">RandomCrop</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mf">0.4914</span><span class="p">,</span> <span class="mf">0.4822</span><span class="p">,</span> <span class="mf">0.4465</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2471</span><span class="p">,</span> <span class="mf">0.2435</span><span class="p">,</span> <span class="mf">0.2616</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">])</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">transform_test</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mf">0.4914</span><span class="p">,</span> <span class="mf">0.4822</span><span class="p">,</span> <span class="mf">0.4465</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2471</span><span class="p">,</span> <span class="mf">0.2435</span><span class="p">,</span> <span class="mf">0.2616</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">])</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">train_set</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">CIFAR10</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform_train</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">test_set</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">CIFAR10</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform_test</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">test_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">test_set</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 模型定义</span>
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">CNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">x</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">model</span> <span class="o">=</span> <span class="n">CNN</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 优化器和损失函数</span>
+</span></span><span class="line"><span class="cl"><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">3e-4</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">StepLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 训练和验证</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_loader</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Batch </span><span class="si">{</span><span class="n">batch_idx</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">correct</span><span class="p">,</span> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">test_loader</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">total</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Accuracy: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">train</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">test</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</span></span></code></pre></div><h2 id="第二版">第二版<a hidden class="anchor" aria-hidden="true" href="#第二版">#</a></h2>
+<p>这是CIFAR-10分类任务的<strong>升级版（v2）<strong>代码。我将逐部分解析，并</strong>与前一个版本（v1）</strong> 做详细对比：</p>
+<hr>
+<h3 id="一整体结构对比"><strong>一、整体结构对比</strong><a hidden class="anchor" aria-hidden="true" href="#一整体结构对比">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>特性</th>
+          <th><strong>v1（基础版）</strong></th>
+          <th><strong>v2（升级版）</strong></th>
+          <th><strong>改进目的</strong></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>模型容量</strong></td>
+          <td>3层卷积，通道数32-64-128</td>
+          <td><strong>4层卷积，通道数64-128-256-256</strong></td>
+          <td><strong>增加非线性表达能力</strong></td>
+      </tr>
+      <tr>
+          <td><strong>全连接层</strong></td>
+          <td>2层（256→10）</td>
+          <td><strong>3层（512→256→10）</strong></td>
+          <td><strong>缓解特征压缩</strong></td>
+      </tr>
+      <tr>
+          <td><strong>Dropout</strong></td>
+          <td>0.5（仅最后）</td>
+          <td><strong>0.3（两层FC后）</strong></td>
+          <td><strong>更细粒度正则化</strong></td>
+      </tr>
+      <tr>
+          <td><strong>学习率调度</strong></td>
+          <td>StepLR（阶梯衰减）</td>
+          <td><strong>CosineAnnealingLR（余弦退火）</strong></td>
+          <td><strong>平滑学习率调整</strong></td>
+      </tr>
+      <tr>
+          <td><strong>初始学习率</strong></td>
+          <td>3e-4</td>
+          <td><strong>1e-3</strong></td>
+          <td><strong>配合余弦退火更大探索空间</strong></td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h3 id="二模型架构-最大变化-"><strong>二、模型架构（</strong> 最大变化 <strong>）</strong><a hidden class="anchor" aria-hidden="true" href="#二模型架构-最大变化-">#</a></h3>
+<h4 id="v2模型结构解析"><strong>v2模型结构解析</strong><a hidden class="anchor" aria-hidden="true" href="#v2模型结构解析">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>  <span class="c1"># 第一次池化：32×32 → 16×16</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>  <span class="c1"># 第二次池化：16×16 → 8×8</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></div><h4 id="关键对比与改进"><strong>关键对比与改进</strong><a hidden class="anchor" aria-hidden="true" href="#关键对比与改进">#</a></h4>
+<table>
+  <thead>
+      <tr>
+          <th>层级</th>
+          <th><strong>v1顺序</strong></th>
+          <th><strong>v2顺序</strong></th>
+          <th><strong>设计差异分析</strong></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Layer1</strong></td>
+          <td>Conv3→32 + ReLU + <strong>Pool</strong></td>
+          <td><strong>Conv3→64 + ReLU</strong>（无池化）</td>
+          <td><strong>v2延迟池化</strong>，保留早期特征分辨率</td>
+      </tr>
+      <tr>
+          <td><strong>Layer2</strong></td>
+          <td>Conv32→64 + ReLU</td>
+          <td><strong>Conv64→128 + ReLU + Pool</strong></td>
+          <td>v2将池化后移，减少信息损失</td>
+      </tr>
+      <tr>
+          <td><strong>Layer3</strong></td>
+          <td>Conv64→128 + ReLU + <strong>Pool</strong></td>
+          <td><strong>Conv128→256 + ReLU</strong></td>
+          <td>v2增加深度，提取更抽象特征</td>
+      </tr>
+      <tr>
+          <td><strong>Layer4</strong></td>
+          <td>❌ 无</td>
+          <td><strong>Conv256→256 + ReLU + Pool</strong></td>
+          <td><strong>v2新增层</strong>，扩大感受野和容量</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>v2的优势</strong>如下：</p>
+<ol>
+<li><strong>延迟池化</strong>：早期层保留更多空间细节，利于小目标（CIFAR-10图像仅32×32）</li>
+<li><strong>增加深度</strong>：4层卷积能学习更复杂的特征层次（边缘→纹理→部件→物体）</li>
+<li><strong>通道翻倍</strong>：后期256通道提供足够容量编码高级语义</li>
+</ol>
+<hr>
+<h3 id="三分类器部分-正则化加强-"><strong>三、分类器部分（</strong> 正则化加强 <strong>）</strong><a hidden class="anchor" aria-hidden="true" href="#三分类器部分-正则化加强-">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>  <span class="c1"># 输入节点从128*8*8=8192增加到256*8*8=16384</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.3</span><span class="p">),</span>  <span class="c1"># 第一个Dropout</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>  <span class="c1"># 新增中间层</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.3</span><span class="p">),</span>  <span class="c1"># 第二个Dropout</span>
+</span></span><span class="line"><span class="cl">    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></div><p><strong>对比总结</strong>：</p>
+<table>
+  <thead>
+      <tr>
+          <th>特性</th>
+          <th><strong>v1</strong></th>
+          <th><strong>v2</strong></th>
+          <th><strong>改进意义</strong></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>FC层数</strong></td>
+          <td>2层</td>
+          <td><strong>3层</strong></td>
+          <td>缓解维度坍缩过快</td>
+      </tr>
+      <tr>
+          <td><strong>Dropout次数</strong></td>
+          <td>1次（仅最后）</td>
+          <td><strong>2次</strong></td>
+          <td>双重正则，防止中间层过拟合</td>
+      </tr>
+      <tr>
+          <td><strong>Dropout率</strong></td>
+          <td>0.5（高）</td>
+          <td><strong>0.3（中）</strong></td>
+          <td>适度正则，保留更多信息流</td>
+      </tr>
+      <tr>
+          <td><strong>参数量</strong></td>
+          <td>~280万</td>
+          <td><strong>~460万</strong></td>
+          <td>容量提升65%</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>设计思想</strong>：v2的FC层形成&quot;瓶颈结构&quot;（16384→512→256→10），逐层压缩，比v1的直接压缩（8192→256→10）更平滑。</p>
+<hr>
+<h3 id="四优化策略-调度器进化-"><strong>四、优化策略（</strong> 调度器进化 <strong>）</strong><a hidden class="anchor" aria-hidden="true" href="#四优化策略-调度器进化-">#</a></h3>
+<h4 id="v2的核心改进"><strong>v2的核心改进</strong><a hidden class="anchor" aria-hidden="true" href="#v2的核心改进">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>  <span class="c1"># 学习率提升3.3倍</span>
+</span></span><span class="line"><span class="cl"><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</span></span></code></pre></div><h4 id="调度器对比"><strong>调度器对比</strong><a hidden class="anchor" aria-hidden="true" href="#调度器对比">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># v1: StepLR</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Epoch 1-2: lr = 3e-4</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Epoch 3-4: lr = 1.5e-4</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Epoch 5-6: lr = 7.5e-5</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Epoch 7-10: lr = 3.75e-5（过早衰减）</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># v2: CosineAnnealingLR</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># lr在10个epoch内从1e-3平滑下降到接近0</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 形成余弦曲线，前期探索，后期精细调整</span>
+</span></span></code></pre></div><p><strong>余弦退火的优势</strong>：</p>
+<ul>
+<li><strong>平滑性</strong>：避免学习率突变导致loss震荡</li>
+<li><strong>探索性</strong>：前期较大lr跳出局部最优</li>
+<li><strong>精细度</strong>：后期小lr稳定收敛</li>
+<li><strong>自动化</strong>：无需人工设定衰减节点</li>
+</ul>
+<hr>
+<h3 id="五关键问题与建议"><strong>五、关键问题与建议</strong><a hidden class="anchor" aria-hidden="true" href="#五关键问题与建议">#</a></h3>
+<h4 id="仍存在的共通问题"><strong>仍存在的共通问题</strong><a hidden class="anchor" aria-hidden="true" href="#仍存在的共通问题">#</a></h4>
+<ol>
+<li><strong>无验证集</strong>：训练集=45000，验证集=5000，测试集=10000（推荐拆分）</li>
+<li><strong>num_workers=0</strong>：建议设为<code>num_workers=2</code>或<code>4</code>（看CPU核心数）</li>
+<li><strong>无早停</strong>：10个epoch可能不够，建议增加到20-30 epoch</li>
+</ol>
+<h4 id="v2专属建议"><strong>v2专属建议</strong><a hidden class="anchor" aria-hidden="true" href="#v2专属建议">#</a></h4>
+<ol>
+<li><strong>学习率适配</strong>：CosineAnnealing下，建议<code>epoch</code>至少等于<code>T_max=10</code>，否则学习率未充分衰减</li>
+<li><strong>模型保存</strong>：大模型更容易过拟合，务必保存最佳<code>model.state_dict()</code></li>
+<li><strong>梯度裁剪</strong>：深层网络可加<code>torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5)</code>防止梯度爆炸</li>
+</ol>
+<hr>
+<h3 id="六一句话总结"><strong>六、一句话总结</strong><a hidden class="anchor" aria-hidden="true" href="#六一句话总结">#</a></h3>
+<p><strong>v1是&quot;能用&quot;的入门模型，v2是&quot;好用&quot;的优化模型</strong>——通过<strong>加深网络、延迟池化、双重Dropout、余弦退火</strong>四大改进，在保持代码简洁的同时显著提升了模型容量和训练稳定性，适合作为CIFAR-10的<strong>Baseline</strong>。</p>
+<p>下附第二版完整代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torchvision</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">optim</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">transforms</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">random</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 固定随机种子</span>
+</span></span><span class="line"><span class="cl"><span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
+</span></span><span class="line"><span class="cl"><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
+</span></span><span class="line"><span class="cl"><span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">benchmark</span> <span class="o">=</span> <span class="kc">False</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 GPU</span>
+</span></span><span class="line"><span class="cl"><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&#34;cuda&#34;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&#34;cpu&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 数据加载与增强</span>
+</span></span><span class="line"><span class="cl"><span class="n">transform_train</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">RandomCrop</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mf">0.4914</span><span class="p">,</span> <span class="mf">0.4822</span><span class="p">,</span> <span class="mf">0.4465</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2471</span><span class="p">,</span> <span class="mf">0.2435</span><span class="p">,</span> <span class="mf">0.2616</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">])</span>
+</span></span><span class="line"><span class="cl"><span class="n">transform_test</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mf">0.4914</span><span class="p">,</span> <span class="mf">0.4822</span><span class="p">,</span> <span class="mf">0.4465</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2471</span><span class="p">,</span> <span class="mf">0.2435</span><span class="p">,</span> <span class="mf">0.2616</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">])</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">train_set</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">CIFAR10</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform_train</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">test_set</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">CIFAR10</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform_test</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">test_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">test_set</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 模型设计：扩展通道数，增加非线性特征提取层</span>
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">CNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.3</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.3</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">x</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">model</span> <span class="o">=</span> <span class="n">CNN</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 优化器和损失函数</span>
+</span></span><span class="line"><span class="cl"><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 训练与验证</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_loader</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Batch </span><span class="si">{</span><span class="n">batch_idx</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">correct</span><span class="p">,</span> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">test_loader</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">total</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Accuracy: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">train</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">test</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</span></span></code></pre></div>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://hy4real.github.io/tags/deeplearning/">DeepLearning</a></li>
+      <li><a href="https://hy4real.github.io/tags/python/">Python</a></li>
+      <li><a href="https://hy4real.github.io/tags/cnn/">CNN</a></li>
+      <li><a href="https://hy4real.github.io/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="https://hy4real.github.io/posts/deeplearningday2/">
+    <span class="title">下一页 »</span>
+    <br>
+    <span>深度学习入门 Day 2</span>
+  </a>
+</nav>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on x"
+            href="https://x.com/intent/tweet/?text=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203&amp;url=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f&amp;hashtags=DeepLearning%2cPython%2cCNN%2c%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f&amp;title=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203&amp;summary=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203&amp;source=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on reddit"
+            href="https://reddit.com/submit?url=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f&title=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on whatsapp"
+            href="https://api.whatsapp.com/send?text=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203%20-%20https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on telegram"
+            href="https://telegram.me/share/url?text=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203&amp;url=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 深度学习入门 Day 3 on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=%e6%b7%b1%e5%ba%a6%e5%ad%a6%e4%b9%a0%e5%85%a5%e9%97%a8%20Day%203&u=https%3a%2f%2fhy4real.github.io%2fposts%2fdeeplearningday3%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://hy4real.github.io/">KEEP IT REAL</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = '复制';
+
+        function copyingDone() {
+            copybutton.innerHTML = '已复制！';
+            setTimeout(() => {
+                copybutton.innerHTML = '复制';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
