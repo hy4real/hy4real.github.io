@@ -56,7 +56,22 @@
         }
 
     </style>
-</noscript><meta property="og:url" content="https://hy4real.github.io/tags/deeplearning/">
+</noscript>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+<meta property="og:url" content="https://hy4real.github.io/tags/deeplearning/">
   <meta property="og:site_name" content="KEEP IT REAL">
   <meta property="og:title" content="DeepLearning">
   <meta property="og:description" content="Records.">
@@ -145,6 +160,23 @@
     </a>
   </h1>
 </header>
+
+<article class="post-entry tag-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">深度学习入门 Day 4
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>神经元模型 基本脑细胞被称为神经元，麦卡洛克和皮茨在论文中给出了高度简化的神经元模型。该模型（我们将其称为 MCP 神经元）在计算机科学领域具有重要意义。相互连接的 MCP 神经元群被称为人工神经网络。
+MCP 神经元具有多个输入 $x_1, …, x_n$。这些输入代表了从神经元突触接收到的输入信号。因此，$x_i$ 可以是 $1$，对应于来自第 $i$ 个连接的输入信号的存在，或者 $x_i$ 是 $0$，对应于不存在来自第 $i$ 次连接的信号。MCP 神经元产生一个输出 $y$，它可以是 $1$，对应于发送信号的神经元，也可以是 $0$，对应于保持静止的神经元。数学上，MCP 神经元是一个函数，它接受 $1$ 和 $0$ 的 $n$ 元组，并产生 $1$ 或 $0$。为了量化每个突触对 MCP 神经元的影响，我们将权重 $w_i$ 分配给每个输入 $x_i$。权重是十进制数，权重的大小对应于相关连接对 MCP 神经元的影响程度。正权重对应于兴奋性突触，负权重对应于抑制性突触。每个输入都乘以相应的权重，然后将这些加权输入加在一起，得到
+$$ w_1 \times x_1 &#43; w_2 \times x_2 &#43; … &#43; w_n \times x_n $$
+其中 $w_i \times x_i$ 表示 $w_i$ 乘以 $x_i$。这对应于假设由神经元执行的输入信号的求和。最后，有一个阈值 $T$，它是一个十进制数，与信号的加权和进行比较。这对应于接收信号之和必须超过的表观阈值，才能使神经元&#34;放电&#34;。如果
+$$ w_1 \times x_1 &#43; w_2 \times x_2 &#43; … &#43; w_n \times x_n \geq T $$
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-11-12 00:00:00 +0000 UTC'>2025年11月12日</span>&nbsp;·&nbsp;<span>why</span></footer>
+  <a class="entry-link" aria-label="post link to 深度学习入门 Day 4" href="https://hy4real.github.io/posts/deeplearningday4/"></a>
+</article>
 
 <article class="post-entry tag-entry"> 
   <header class="entry-header">
